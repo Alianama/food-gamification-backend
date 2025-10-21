@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model character {
+  id              Int               @id @default(autoincrement())
+  userId          Int               @map("user_id")
+  statusName      String            @map("status_name")
+  healthPoint     Int              @default(0) @map("health_point")
+  xpPoint         Int              @default(0) @map("xp_point")
+  xpToNextLevel   Int              @default(0) @map("xp_to_next_level")
+  level           Int             @default(0) @map("level")
+  isDeleted       Boolean         @default(false) @map("is_deleted")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  user            user           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("character")
+}
+
+model foodHistory {
+  id                  Int       @id @default(autoincrement())
+  userId              Int       @map("user_id")
+  foodName            String    @map("food_name")
+  brandName           String?   @map("brand_name")
+  foodDescription     String?   @map("food_description")
+  foodType            String?   @map("food_type")
+  foodUrl             String?   @map("food_url")
+  servingDescription  String?   @map("serving_description")
+  calories            Float?    @map("calories")
+  carbohydrate        Float?    @map("carbohydrate")
+  fat                 Float?    @map("fat")
+  fiber               Float?    @map("fiber")
+  protein             Float?    @map("protein")
+  sodium              Float?    @map("sodium")
+  sugar               Float?    @map("sugar")
+  isConsumed          Boolean   @default(false) @map("is_consumed")
+  consumedAt          DateTime? @map("consumed_at")
+  xpGained            Int?      @map("xp_gained")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  user                user      @relation(fields: [userId], references: [id])
+
+  @@map("food_history")
+}
+
+model user {
+  id                  Int            @id @default(autoincrement())
+  fullName            String         @map("full_name")
+  username            String         @unique
+  email               String?        @unique
+  password            String
+  roleId              Int            @map("role_id")
+  tokenVersion        Int            @default(0) @map("token_version")
+  isDeleted           Boolean        @default(false) @map("is_deleted")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+  role                role           @relation(fields: [roleId], references: [id])
+  logs                log[]
+  character           character?
+  foodHistory         foodHistory[] 
+  @@map("users")
+}
+
+model role {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  description String?
+  isDeleted   Boolean           @default(false) @map("is_deleted")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  users       user[]
+  permissions role_permission[]
+
+  @@map("roles")
+}
+
+model permission {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  description String?
+  isDeleted   Boolean           @default(false) @map("is_deleted")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  roles       role_permission[]
+
+  @@map("permissions")
+}
+
+model role_permission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  role         role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model log {
+  id          Int      @id @default(autoincrement())
+  action      String
+  description String   @db.Text
+  userId      Int      @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        user     @relation(fields: [userId], references: [id])
+
+  @@map("logs")
+}
+
