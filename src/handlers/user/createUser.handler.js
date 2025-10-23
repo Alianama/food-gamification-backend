@@ -6,10 +6,9 @@ const prisma = new PrismaClient();
 
 const createUserHandler = async (req, res) => {
   try {
-    const { username, fullName, email, password, roleId } = req.body;
+    const { username, fullName, email, password } = req.body;
 
-    // Validasi input
-    if (!username || !fullName || !email || !password || !roleId) {
+    if (!username || !fullName || !email || !password) {
       return res.status(400).json({
         status: "error",
         message: "Semua field wajib diisi",
@@ -17,7 +16,6 @@ const createUserHandler = async (req, res) => {
       });
     }
 
-    // Validasi format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -27,7 +25,6 @@ const createUserHandler = async (req, res) => {
       });
     }
 
-    // Validasi panjang password
     if (password.length < 6) {
       return res.status(400).json({
         status: "error",
@@ -36,7 +33,6 @@ const createUserHandler = async (req, res) => {
       });
     }
 
-    // Cek apakah username atau email sudah digunakan
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ username }, { email }],
@@ -51,30 +47,18 @@ const createUserHandler = async (req, res) => {
       });
     }
 
-    // Cek apakah role ada
-    const role = await prisma.role.findUnique({
-      where: { id: parseInt(roleId) },
-    });
-
-    if (!role) {
-      return res.status(400).json({
-        status: "error",
-        message: "Role tidak ditemukan",
-        data: null,
-      });
-    }
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Buat user baru
+    // default (3 = User biasa)
+    const defaultRoleId = 3;
+
     const user = await prisma.user.create({
       data: {
         username,
         fullName,
         email,
         password: hashedPassword,
-        roleId: parseInt(roleId),
+        roleId: defaultRoleId,
         tokenVersion: 0,
       },
       select: {
@@ -93,23 +77,24 @@ const createUserHandler = async (req, res) => {
       },
     });
 
-    // Log aktivitas create
-    await logCreate(
-      "users",
-      req.user.id,
-      user.id,
-      { username, fullName, email, roleId },
-      `User baru dibuat: ${fullName}`
-    );
+    if (req.user?.id) {
+      await logCreate(
+        "users",
+        req.user.id,
+        user.id,
+        { username, fullName, email },
+        `User baru dibuat: ${fullName}`
+      );
+    }
 
-    res.status(201).json({
+    return res.status(201).json({
       status: "success",
       message: "User berhasil dibuat",
       data: user,
     });
   } catch (error) {
     console.error("Create user error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Terjadi kesalahan saat membuat user",
       data: null,

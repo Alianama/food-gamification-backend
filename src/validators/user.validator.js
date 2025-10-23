@@ -1,5 +1,5 @@
 const createUserValidator = (req, res, next) => {
-  const { username, fullName, email, password, roleId } = req.body;
+  const { username, fullName, email, password } = req.body;
   const errors = [];
 
   if (!username) {
@@ -26,12 +26,6 @@ const createUserValidator = (req, res, next) => {
     errors.push("Password harus diisi");
   } else if (password.length < 6) {
     errors.push("Password minimal 6 karakter");
-  }
-
-  if (!roleId) {
-    errors.push("Role harus diisi");
-  } else if (isNaN(parseInt(roleId))) {
-    errors.push("Role ID harus berupa angka");
   }
 
   if (errors.length > 0) {
