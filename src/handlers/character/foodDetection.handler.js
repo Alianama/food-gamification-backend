@@ -66,14 +66,18 @@ const foodDetectionHandler = async (req, res) => {
       contentType: req.file.mimetype,
     });
 
-    const response = await axios.post("http://127.0.0.1:5000/predict", form, {
-      headers: {
-        ...form.getHeaders(),
-      },
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      timeout: 30000,
-    });
+    const response = await axios.post(
+      `${process.env.IMAGE_DETECTION_API_URL}`,
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        timeout: 30000,
+      }
+    );
 
     console.info("Food detection completed successfully", {
       userId: req.user?.id,

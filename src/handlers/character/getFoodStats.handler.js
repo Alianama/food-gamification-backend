@@ -1,4 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
+const xpCalculation = require("../../services/xpCalculation.service");
+const healthCalculation = require("../../services/healthCalculation.service");
 
 const prisma = new PrismaClient();
 
@@ -120,6 +122,86 @@ const getFoodStatsHandler = async (req, res) => {
       periodDays,
     });
 
+    const character = await prisma.character.findUnique({
+      where: { userId: userId },
+      select: {
+        id: true,
+        level: true,
+        statusName: true,
+        healthPoint: true,
+        xpToNextLevel: true,
+        xpPoint: true,
+        statusName: true,
+      },
+    });
+
+    // Health score and recommendations over last 7 days (consumed foods only)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const weeklyConsumed = await prisma.foodHistory.findMany({
+      where: {
+        userId: userId,
+        isConsumed: true,
+        consumedAt: {
+          gte: sevenDaysAgo,
+        },
+      },
+      select: {
+        calories: true,
+        protein: true,
+        fiber: true,
+        sugar: true,
+        sodium: true,
+        fat: true,
+        consumedAt: true,
+      },
+    });
+
+    const dailyNutrition = {};
+    weeklyConsumed.forEach((food) => {
+      const date = food.consumedAt.toISOString().split("T")[0];
+      if (!dailyNutrition[date]) {
+        dailyNutrition[date] = {
+          date,
+          calories: 0,
+          protein: 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0,
+          fat: 0,
+        };
+      }
+      dailyNutrition[date].calories += food.calories || 0;
+      dailyNutrition[date].protein += food.protein || 0;
+      dailyNutrition[date].fiber += food.fiber || 0;
+      dailyNutrition[date].sugar += food.sugar || 0;
+      dailyNutrition[date].sodium += food.sodium || 0;
+      dailyNutrition[date].fat += food.fat || 0;
+    });
+
+    const weeklyData = Object.values(dailyNutrition);
+    const healthResult =
+      healthCalculation.calculateWeeklyHealthScore(weeklyData);
+
+    // Today's totals for nutrition recommendations
+    const todayStr = new Date().toISOString().split("T")[0];
+    const todayTotals = dailyNutrition[todayStr] || {
+      calories: 0,
+      protein: 0,
+      fiber: 0,
+      sugar: 0,
+      sodium: 0,
+    };
+
+    const nutrition = {
+      calories: todayTotals.calories || 0,
+      protein: todayTotals.protein || 0,
+      fiber: todayTotals.fiber || 0,
+      sugar: todayTotals.sugar || 0,
+      sodium: todayTotals.sodium || 0,
+    };
+
     return res.status(200).json({
       status: "success",
       message: "Statistik makanan berhasil diambil",
@@ -148,6 +230,21 @@ const getFoodStatsHandler = async (req, res) => {
           sodium: Math.round(avgSodium * 100) / 100,
           sugar: Math.round(avgSugar * 100) / 100,
         },
+        nutritionRecommendations:
+          xpCalculation.getNutritionRecommendations(nutrition),
+        healthRecommendations: healthCalculation.getHealthRecommendations(
+          healthResult.weeklyScore,
+          (healthResult.dailyScores &&
+            healthResult.dailyScores[healthResult.dailyScores.length - 1] &&
+            healthResult.dailyScores[healthResult.dailyScores.length - 1]
+              .breakdown) ||
+            {}
+        ),
+        health: {
+          weeklyScore: healthResult.weeklyScore,
+          status: healthResult.status,
+        },
+        character,
         mostConsumedFoods,
         dailyBreakdown: dailyStats,
       },

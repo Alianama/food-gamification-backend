@@ -48,15 +48,7 @@ const foodConfirmHandler = async (req, res) => {
       });
     }
 
-    let result = {
-      foodHistoryId,
-      confirmed: confirm,
-      xpGained: 0,
-      levelUp: false,
-      newLevel: 0,
-      healthScore: 0,
-      healthStatus: "No Data",
-    };
+    let updatedCharacterState = null;
 
     if (confirm) {
       // Hitung XP dari nutrisi
@@ -171,38 +163,12 @@ const foodConfirmHandler = async (req, res) => {
         },
       });
 
-      // Dapatkan info level
-      const levelInfo = xpCalculation.getLevelInfo(levelUpResult.newLevel);
-      const healthStatusInfo = healthCalculation.getHealthStatusInfo(
-        healthResult.status
-      );
-
-      result = {
-        foodHistoryId,
-        confirmed: true,
-        xpGained,
-        levelUp: levelUpResult.levelUp,
-        newLevel: levelUpResult.newLevel,
-        levelsGained: levelUpResult.levelsGained,
-        levelInfo,
-        healthScore: healthResult.weeklyScore,
-        healthStatus: healthResult.status,
-        healthStatusInfo,
-        xpBreakdown: xpResult.breakdown,
-        nutritionRecommendations:
-          xpCalculation.getNutritionRecommendations(nutrition),
-        healthRecommendations: healthCalculation.getHealthRecommendations(
-          healthResult.weeklyScore,
-          healthResult.dailyScores[healthResult.dailyScores.length - 1]
-            ?.breakdown || {}
-        ),
-        character: {
-          xpPoint: updatedCharacter.xpPoint,
-          level: updatedCharacter.level,
-          xpToNextLevel: updatedCharacter.xpToNextLevel,
-          healthPoint: healthResult.weeklyScore,
-          statusName: healthResult.status,
-        },
+      updatedCharacterState = {
+        xpPoint: updatedCharacter.xpPoint,
+        level: updatedCharacter.level,
+        xpToNextLevel: updatedCharacter.xpToNextLevel,
+        healthPoint: healthResult.weeklyScore,
+        statusName: healthResult.status,
       };
 
       console.info("Food confirmed and character updated", {
@@ -227,7 +193,11 @@ const foodConfirmHandler = async (req, res) => {
       message: confirm
         ? "Makanan berhasil dikonfirmasi!"
         : "Konfirmasi dibatalkan",
-      data: result,
+      data: {
+        foodHistoryId,
+        confirmed: confirm,
+        character: updatedCharacterState,
+      },
     });
   } catch (error) {
     console.error("Error in food confirmation", {

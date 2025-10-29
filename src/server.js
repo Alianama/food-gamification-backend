@@ -2,16 +2,13 @@ const express = require("express");
 const dotenv = require("dotenv");
 const routes = require("./routes");
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS middleware
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -25,14 +22,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
 app.use("/api", routes);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
 
-  // Handle multer errors
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({
       status: "error",

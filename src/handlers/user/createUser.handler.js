@@ -49,7 +49,6 @@ const createUserHandler = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // default (3 = User biasa)
     const defaultRoleId = 3;
 
     const user = await prisma.user.create({
@@ -77,6 +76,16 @@ const createUserHandler = async (req, res) => {
       },
     });
 
+    await prisma.character.create({
+      data: {
+        userId: user.id,
+        statusName: "New User",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // ✅ Logging jika user yg membuat ada (admin)
     if (req.user?.id) {
       await logCreate(
         "users",
@@ -89,7 +98,7 @@ const createUserHandler = async (req, res) => {
 
     return res.status(201).json({
       status: "success",
-      message: "User berhasil dibuat",
+      message: "User berhasil dibuat & karakter otomatis dibuat!",
       data: user,
     });
   } catch (error) {

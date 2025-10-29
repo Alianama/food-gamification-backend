@@ -10,7 +10,7 @@ datasource db {
 model character {
   id              Int               @id @default(autoincrement())
   userId          Int               @map("user_id")
-  statusName      String            @map("status_name")
+  statusName      String            @default("New User") @map("status_name")
   healthPoint     Int              @default(0) @map("health_point")
   xpPoint         Int              @default(0) @map("xp_point")
   xpToNextLevel   Int              @default(0) @map("xp_to_next_level")
