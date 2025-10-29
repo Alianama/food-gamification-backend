@@ -5,15 +5,15 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
-    // Clear existing data
+    // ------------------ HAPUS DATA ------------------
     await prisma.log.deleteMany({});
     await prisma.character.deleteMany({});
     await prisma.user.deleteMany({});
-    await prisma.role_permission.deleteMany();
-    await prisma.permission.deleteMany();
-    await prisma.role.deleteMany();
+    await prisma.role_permission.deleteMany({});
+    await prisma.permission.deleteMany({});
+    await prisma.role.deleteMany({});
 
-    // Create permissions
+    // ------------------ PERMISSIONS ------------------
     const permissions = await Promise.all([
       prisma.permission.create({
         data: {
@@ -35,7 +35,7 @@ async function main() {
       }),
     ]);
 
-    // Create roles
+    // ------------------ ROLES ------------------
     const superAdminRole = await prisma.role.create({
       data: {
         name: "SUPER_ADMIN",
@@ -76,61 +76,82 @@ async function main() {
       },
     });
 
-    const hashedPassword = await bcrypt.hash("123321", 10);
-    const adminHashedPassword = await bcrypt.hash("admin123", 10);
-    const userHashedPassword = await bcrypt.hash("user123", 10);
+    // ------------------ PASSWORD HASH ------------------
+    const superAdminPassword = await bcrypt.hash("123321", 10);
+    const adminPassword = await bcrypt.hash("admin123", 10);
+    const userPassword = await bcrypt.hash("user123", 10);
 
     const now = new Date();
 
-    // ✅ Create Super Admin + Character
+    // ------------------ CREATE USERS & CHARACTERS ------------------
+
+    // Super Admin
     const superAdmin = await prisma.user.create({
       data: {
         username: "superadmin",
         fullName: "Super Admin",
         email: "superadmin@example.com",
-        password: hashedPassword,
+        password: superAdminPassword,
         roleId: superAdminRole.id,
       },
     });
     await prisma.character.create({
       data: {
         userId: superAdmin.id,
+        statusName: "New User",
+        healthPoint: 0,
+        xpPoint: 0,
+        xpToNextLevel: 0,
+        level: 0,
+        isDeleted: false,
         createdAt: now,
         updatedAt: now,
       },
     });
 
-    // ✅ Create Admin + Character
+    // Admin
     const admin = await prisma.user.create({
       data: {
         username: "admin",
         fullName: "Admin",
         email: "admin@example.com",
-        password: adminHashedPassword,
+        password: adminPassword,
         roleId: adminRole.id,
       },
     });
     await prisma.character.create({
       data: {
         userId: admin.id,
+        statusName: "New User",
+        healthPoint: 0,
+        xpPoint: 0,
+        xpToNextLevel: 0,
+        level: 0,
+        isDeleted: false,
         createdAt: now,
         updatedAt: now,
       },
     });
 
-    // ✅ Create Regular User + Character
+    // Regular User
     const user = await prisma.user.create({
       data: {
         username: "user",
         fullName: "User",
         email: "user@example.com",
-        password: userHashedPassword,
+        password: userPassword,
         roleId: userRole.id,
       },
     });
     await prisma.character.create({
       data: {
         userId: user.id,
+        statusName: "New User",
+        healthPoint: 0,
+        xpPoint: 0,
+        xpToNextLevel: 0,
+        level: 0,
+        isDeleted: false,
         createdAt: now,
         updatedAt: now,
       },

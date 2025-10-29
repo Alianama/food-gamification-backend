@@ -247,33 +247,33 @@ const getHealthRecommendations = (score, breakdown) => {
   }
 
   // Rekomendasi spesifik berdasarkan breakdown
-  if (breakdown.calories.score < 30) {
+  if (breakdown && breakdown.calories && breakdown.calories.score < 30) {
     recommendations.push(
       "Perhatikan asupan kalori harian. Target: 1800-2200 kcal."
     );
   }
 
-  if (breakdown.protein.score < 15) {
+  if (breakdown && breakdown.protein && breakdown.protein.score < 15) {
     recommendations.push(
       "Tingkatkan asupan protein dengan daging, ikan, atau kacang-kacangan."
     );
   }
 
-  if (breakdown.fiber.score < 7) {
+  if (breakdown && breakdown.fiber && breakdown.fiber.score < 7) {
     recommendations.push(
       "Tambahkan lebih banyak sayuran dan buah-buahan untuk serat."
     );
   }
 
-  if (breakdown.sugar.score < 7) {
+  if (breakdown && breakdown.sugar && breakdown.sugar.score < 7) {
     recommendations.push("Kurangi makanan dan minuman manis.");
   }
 
-  if (breakdown.sodium.score < 7) {
+  if (breakdown && breakdown.sodium && breakdown.sodium.score < 7) {
     recommendations.push("Kurangi garam dan makanan olahan tinggi natrium.");
   }
 
-  if (breakdown.fat.score < 7) {
+  if (breakdown && breakdown.fat && breakdown.fat.score < 7) {
     recommendations.push(
       "Pilih lemak sehat dan kurangi makanan berlemak tinggi."
     );
