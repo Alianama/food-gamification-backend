@@ -12,6 +12,8 @@ const createUserHandler = require("./user/createUser.handler");
 const updateUserHandler = require("./user/updateUser.handler");
 const deleteUserHandler = require("./user/deleteUser.handler");
 const resetPasswordHandler = require("./user/resetPassword.handler");
+const changeProfilePictureHandler = require("./user/changeProfilePicture.handler");
+const decodeBase64Handler = require("./user/decodeBase64.handler");
 
 module.exports = {
   // Auth handlers
@@ -28,4 +30,6 @@ module.exports = {
   updateUserHandler,
   deleteUserHandler,
   resetPasswordHandler,
+  changeProfilePictureHandler,
+  decodeBase64Handler,
 };

@@ -62,6 +62,8 @@ model user {
   createdAt           DateTime       @default(now()) @map("created_at")
   updatedAt           DateTime       @updatedAt @map("updated_at")
   role                role           @relation(fields: [roleId], references: [id])
+  profilePicture      String?        @db.LongText @map("profile_picture")
+  profilePictureMimeType String?    @map("profile_picture_mime_type")
   logs                log[]
   character           character?
   foodHistory         foodHistory[] 

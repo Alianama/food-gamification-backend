@@ -1,5 +1,4 @@
 const { PrismaClient } = require("@prisma/client");
-
 const prisma = new PrismaClient();
 
 const getProfileHandler = async (req, res) => {
@@ -11,6 +10,7 @@ const getProfileHandler = async (req, res) => {
         username: true,
         fullName: true,
         email: true,
+        profilePicture: true,
         createdAt: true,
         updatedAt: true,
         role: {
@@ -21,10 +21,7 @@ const getProfileHandler = async (req, res) => {
             permissions: {
               select: {
                 permission: {
-                  select: {
-                    name: true,
-                    description: true,
-                  },
+                  select: { name: true, description: true },
                 },
               },
             },
@@ -41,11 +38,13 @@ const getProfileHandler = async (req, res) => {
       });
     }
 
-    // Transform dates to ISO string
     const transformedUser = {
       ...user,
       createdAt: user.createdAt?.toISOString(),
       updatedAt: user.updatedAt?.toISOString(),
+      profilePicture: user.profilePicture
+        ? `${req.protocol}://${req.get("host")}/api/users/picture/${user.id}`
+        : null,
     };
 
     res.json({

@@ -10,6 +10,7 @@ const {
   getUserByIdValidator,
   deleteUserValidator,
 } = require("../validators/user.validator");
+const upload = require("../middleware/upload");
 
 router.get(
   "/",
@@ -17,7 +18,7 @@ router.get(
   verifyToken,
   userController.getAll
 );
-router.get("/me", userController.getOwnProfile);
+router.get("/me", verifyToken, userController.getOwnProfile);
 router.get(
   "/:id",
   checkPermission("MANAGE_USERS"),
@@ -47,5 +48,13 @@ router.delete(
   deleteUserValidator,
   userController.delete
 );
+router.post(
+  "/profile-picture",
+  verifyToken,
+  upload.single("image"),
+  userController.changeProfilePicture
+);
+
+router.get("/picture/:userId", userController.decodeBase64);
 
 module.exports = router;
