@@ -27,5 +27,21 @@ services:
     depends_on:
       - db
 
+  backend:
+    build: .
+    container_name: food_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "mysql://ali:ganteng@db:3306/food_gamification"
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npx prisma migrate deploy && npm run dev"
+
 volumes:
   db_data:
