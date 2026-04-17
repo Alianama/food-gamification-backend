@@ -27,9 +27,26 @@ const getFoodStatsHandler = async (req, res) => {
       startDate: startDate.toISOString(),
     });
 
-    const foodHistory = await prisma.foodHistory.findMany({
+    // Ambil SEMUA riwayat scan (untuk hitungan berapa kali scan)
+    const allScannedHistory = await prisma.foodHistory.findMany({
       where: {
         userId: userId,
+        createdAt: {
+          gte: startDate,
+        },
+      },
+      select: {
+        foodName: true,
+        isConsumed: true,
+        createdAt: true,
+      },
+    });
+
+    // Hanya makanan yang DIKONSUMSI (fed ke character) yang dihitung nutrisinya
+    const consumedHistory = await prisma.foodHistory.findMany({
+      where: {
+        userId: userId,
+        isConsumed: true,
         createdAt: {
           gte: startDate,
         },
@@ -47,47 +64,52 @@ const getFoodStatsHandler = async (req, res) => {
       },
     });
 
-    const totalEntries = foodHistory.length;
-    const totalCalories = foodHistory.reduce(
+    const totalScanned = allScannedHistory.length;          // total scan (semua)
+    const totalConsumed = consumedHistory.length;           // total dikonsumsi saja
+    const totalEntries = totalScanned;                      // untuk backward compat
+
+    // Kalkulasi nutrisi HANYA dari makanan yang dikonsumsi
+    const totalCalories = consumedHistory.reduce(
       (sum, food) => sum + (food.calories || 0),
       0
     );
-    const totalCarbohydrate = foodHistory.reduce(
+    const totalCarbohydrate = consumedHistory.reduce(
       (sum, food) => sum + (food.carbohydrate || 0),
       0
     );
-    const totalFat = foodHistory.reduce(
+    const totalFat = consumedHistory.reduce(
       (sum, food) => sum + (food.fat || 0),
       0
     );
-    const totalFiber = foodHistory.reduce(
+    const totalFiber = consumedHistory.reduce(
       (sum, food) => sum + (food.fiber || 0),
       0
     );
-    const totalProtein = foodHistory.reduce(
+    const totalProtein = consumedHistory.reduce(
       (sum, food) => sum + (food.protein || 0),
       0
     );
-    const totalSodium = foodHistory.reduce(
+    const totalSodium = consumedHistory.reduce(
       (sum, food) => sum + (food.sodium || 0),
       0
     );
-    const totalSugar = foodHistory.reduce(
+    const totalSugar = consumedHistory.reduce(
       (sum, food) => sum + (food.sugar || 0),
       0
     );
 
-    const avgCalories = totalEntries > 0 ? totalCalories / totalEntries : 0;
-    const avgCarbohydrate =
-      totalEntries > 0 ? totalCarbohydrate / totalEntries : 0;
-    const avgFat = totalEntries > 0 ? totalFat / totalEntries : 0;
-    const avgFiber = totalEntries > 0 ? totalFiber / totalEntries : 0;
-    const avgProtein = totalEntries > 0 ? totalProtein / totalEntries : 0;
-    const avgSodium = totalEntries > 0 ? totalSodium / totalEntries : 0;
-    const avgSugar = totalEntries > 0 ? totalSugar / totalEntries : 0;
+    // Rata-rata berdasarkan item yang dikonsumsi
+    const avgCalories = totalConsumed > 0 ? totalCalories / totalConsumed : 0;
+    const avgCarbohydrate = totalConsumed > 0 ? totalCarbohydrate / totalConsumed : 0;
+    const avgFat = totalConsumed > 0 ? totalFat / totalConsumed : 0;
+    const avgFiber = totalConsumed > 0 ? totalFiber / totalConsumed : 0;
+    const avgProtein = totalConsumed > 0 ? totalProtein / totalConsumed : 0;
+    const avgSodium = totalConsumed > 0 ? totalSodium / totalConsumed : 0;
+    const avgSugar = totalConsumed > 0 ? totalSugar / totalConsumed : 0;
 
+    // mostConsumedFoods: hanya dari yang dikonsumsi
     const foodCounts = {};
-    foodHistory.forEach((food) => {
+    consumedHistory.forEach((food) => {
       foodCounts[food.foodName] = (foodCounts[food.foodName] || 0) + 1;
     });
 
@@ -96,20 +118,35 @@ const getFoodStatsHandler = async (req, res) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
+    // dailyBreakdown: gabungan scan + consumed per hari
     const dailyBreakdown = {};
-    foodHistory.forEach((food) => {
+    allScannedHistory.forEach((food) => {
       const date = food.createdAt.toISOString().split("T")[0];
       if (!dailyBreakdown[date]) {
         dailyBreakdown[date] = {
           date,
           count: 0,
+          countConsumed: 0,
+          countScannedOnly: 0,
           calories: 0,
           foods: [],
         };
       }
       dailyBreakdown[date].count++;
-      dailyBreakdown[date].calories += food.calories || 0;
+      if (food.isConsumed) {
+        dailyBreakdown[date].countConsumed++;
+      } else {
+        dailyBreakdown[date].countScannedOnly++;
+      }
       dailyBreakdown[date].foods.push(food.foodName);
+    });
+
+    // Tambahkan kalori dari yang dikonsumsi saja
+    consumedHistory.forEach((food) => {
+      const date = food.createdAt.toISOString().split("T")[0];
+      if (dailyBreakdown[date]) {
+        dailyBreakdown[date].calories += food.calories || 0;
+      }
     });
 
     const dailyStats = Object.values(dailyBreakdown).sort(
@@ -212,7 +249,9 @@ const getFoodStatsHandler = async (req, res) => {
           endDate: new Date().toISOString(),
         },
         summary: {
-          totalEntries,
+          totalEntries,         // total semua scan
+          totalScanned,         // alias totalEntries
+          totalConsumed,        // hanya yang dikonsumsi (fed ke character)
           totalCalories: Math.round(totalCalories * 100) / 100,
           totalCarbohydrate: Math.round(totalCarbohydrate * 100) / 100,
           totalFat: Math.round(totalFat * 100) / 100,

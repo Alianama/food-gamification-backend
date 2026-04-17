@@ -89,37 +89,46 @@ const foodDetectionHandler = async (req, res) => {
     let savedFoodHistory = null;
     try {
       const nutritionInfo = response.data.nutrition_info;
-      const nutrition = nutritionInfo.nutrition;
+      const predictedFood = response.data.predicted_food;
 
-      savedFoodHistory = await prisma.foodHistory.create({
-        data: {
+      // Jika makanan tidak dikenali (Unknown Food), jangan simpan ke DB
+      // karena tidak ada data nutrisi yang valid
+      if (predictedFood === 'Unknown Food' || !nutritionInfo) {
+        console.info("Unknown food detected, skipping database save", {
+          userId: req.user?.id,
+          predictedFood,
+        });
+      } else {
+        const nutrition = nutritionInfo.nutrition || {};
+
+        savedFoodHistory = await prisma.foodHistory.create({
+          data: {
+            userId: req.user.id,
+            foodName: nutritionInfo.food_name || predictedFood,
+            brandName: nutritionInfo.brand_name || "Generic",
+            foodDescription: nutritionInfo.food_description || null,
+            foodType: nutritionInfo.food_type || null,
+            foodUrl: nutritionInfo.food_url || null,
+            servingDescription: nutrition.serving_description || null,
+            calories: nutrition.calories ? parseFloat(nutrition.calories) : null,
+            carbohydrate: nutrition.carbohydrate ? parseFloat(nutrition.carbohydrate) : null,
+            fat: nutrition.fat ? parseFloat(nutrition.fat) : null,
+            fiber: nutrition.fiber ? parseFloat(nutrition.fiber) : null,
+            protein: nutrition.protein ? parseFloat(nutrition.protein) : null,
+            sodium: nutrition.sodium ? parseFloat(nutrition.sodium) : null,
+            sugar: nutrition.sugar ? parseFloat(nutrition.sugar) : null,
+            isConsumed: false,
+            consumedAt: null,
+            xpGained: null,
+          },
+        });
+
+        console.info("Food history saved successfully", {
           userId: req.user.id,
-          foodName: nutritionInfo.food_name || response.data.predicted_food,
-          brandName: nutritionInfo.brand_name || "Generic",
-          foodDescription: nutritionInfo.food_description || null,
-          foodType: nutritionInfo.food_type || null,
-          foodUrl: nutritionInfo.food_url || null,
-          servingDescription: nutrition.serving_description || null,
-          calories: nutrition.calories ? parseFloat(nutrition.calories) : null,
-          carbohydrate: nutrition.carbohydrate
-            ? parseFloat(nutrition.carbohydrate)
-            : null,
-          fat: nutrition.fat ? parseFloat(nutrition.fat) : null,
-          fiber: nutrition.fiber ? parseFloat(nutrition.fiber) : null,
-          protein: nutrition.protein ? parseFloat(nutrition.protein) : null,
-          sodium: nutrition.sodium ? parseFloat(nutrition.sodium) : null,
-          sugar: nutrition.sugar ? parseFloat(nutrition.sugar) : null,
-          isConsumed: false, // Default false, akan diupdate saat konfirmasi
-          consumedAt: null,
-          xpGained: null,
-        },
-      });
-
-      console.info("Food history saved successfully", {
-        userId: req.user.id,
-        foodHistoryId: savedFoodHistory.id,
-        foodName: savedFoodHistory.foodName,
-      });
+          foodHistoryId: savedFoodHistory.id,
+          foodName: savedFoodHistory.foodName,
+        });
+      }
     } catch (dbError) {
       console.error("Failed to save food history to database", {
         userId: req.user?.id,

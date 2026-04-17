@@ -13,6 +13,15 @@ const getProfileHandler = async (req, res) => {
         profilePicture: true,
         createdAt: true,
         updatedAt: true,
+        character: {
+          select: {
+            level: true,
+            healthPoint: true,
+            xpPoint: true,
+            xpToNextLevel: true,
+            statusName: true,
+          }
+        },
         role: {
           select: {
             id: true,

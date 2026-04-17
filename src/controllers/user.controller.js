@@ -7,6 +7,7 @@ const resetPasswordHandler = require("../handlers/user/resetPassword.handler");
 const getOwnProfileHandler = require("../handlers/auth/getProfile.handler");
 const changeProfilePictureHandler = require("../handlers/user/changeProfilePicture.handler");
 const decodeBase64Handler = require("../handlers/user/decodeBase64.handler");
+const changePasswordHandler = require("../handlers/user/changePassword.handler");
 
 const userController = {
   getAll: getAllUsersHandler,
@@ -20,6 +21,7 @@ const userController = {
   getOwnProfile: getOwnProfileHandler,
   changeProfilePicture: changeProfilePictureHandler,
   decodeBase64: decodeBase64Handler,
+  changePassword: changePasswordHandler,
 };
 
 module.exports = userController;

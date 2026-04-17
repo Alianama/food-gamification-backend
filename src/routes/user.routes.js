@@ -27,6 +27,9 @@ router.get(
   userController.getById
 );
 router.post("/add", createUserValidator, userController.createUser);
+// PENTING: Route spesifik harus di ATAS route /:id agar tidak tertukar!
+router.put("/change-password", verifyToken, userController.changePassword);
+
 router.put(
   "/:id",
   checkPermission("MANAGE_USERS"),

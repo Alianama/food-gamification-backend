@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -63,7 +63,7 @@ model user {
   createdAt           DateTime       @default(now()) @map("created_at")
   updatedAt           DateTime       @updatedAt @map("updated_at")
   role                role           @relation(fields: [roleId], references: [id])
-  profilePicture      String?        @db.LongText @map("profile_picture")
+  profilePicture      String?        @map("profile_picture")
   profilePictureMimeType String?    @map("profile_picture_mime_type")
   logs                log[]
   character           character?
@@ -112,7 +112,7 @@ model role_permission {
 model log {
   id          Int      @id @default(autoincrement())
   action      String
-  description String   @db.Text
+  description String   
   userId      Int      @map("user_id")
   createdAt   DateTime @default(now()) @map("created_at")
   user        user     @relation(fields: [userId], references: [id])
